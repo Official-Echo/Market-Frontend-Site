@@ -50,6 +50,8 @@ export default function EmployeesList(
     dateOfStart: null,
     password: null,
   });
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(true);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "surname",
@@ -138,6 +140,13 @@ export default function EmployeesList(
     const value = target.type === "number"
       ? Number(target.value)
       : target.value;
+
+    if (target.name === "password") {
+      setPasswordChanged(true);
+
+      setIsPasswordValid(value === "" || String(value).length >= 6);
+    }
+
     setFormData({
       ...formData,
       [target.name]: value,
@@ -146,16 +155,34 @@ export default function EmployeesList(
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
+
+    if ((!editingEmployee || passwordChanged) && !isPasswordValid) {
+      alert("Password must be at least 6 characters long if set.");
+      return;
+    }
+
+    const dataToSend = { ...formData };
+
     if (editingEmployee) {
-      onUpdate(editingEmployee.idEmployee, formData);
+      if (!passwordChanged || dataToSend.password === "") {
+        dataToSend.password = null;
+      }
+
+      onUpdate(editingEmployee.idEmployee, dataToSend);
     } else {
-      onAdd(formData);
+      if (dataToSend.password === null || dataToSend.password === "") {
+        alert("Password is required for new employees.");
+        return;
+      }
+      onAdd(dataToSend);
     }
     resetForm();
   };
 
   const startEdit = (emp: Employee) => {
     setEditingEmployee(emp);
+    setPasswordChanged(false);
+    setIsPasswordValid(true);
     setFormData({
       idEmployee: emp.idEmployee,
       name: emp.name,
@@ -169,7 +196,7 @@ export default function EmployeesList(
       zipCode: emp.zipCode,
       dateOfBirth: emp.dateOfBirth,
       dateOfStart: emp.dateOfStart,
-      password: emp.password,
+      password: "",
     });
     setShowForm(true);
   };
@@ -192,6 +219,8 @@ export default function EmployeesList(
       password: null,
     });
     setShowForm(false);
+    setPasswordChanged(false);
+    setIsPasswordValid(true);
   };
 
   const reportHeaders = [
@@ -407,12 +436,24 @@ export default function EmployeesList(
                   value={formData.password || ""}
                   onInput={handleInputChange}
                   placeholder={editingEmployee ? "••••••••" : ""}
+                  aria-invalid={passwordChanged && !isPasswordValid}
                 />
+                {/* Show error message if changed and invalid */}
+                {passwordChanged && !isPasswordValid && (
+                  <small
+                    style={{ color: "red", display: "block", marginTop: "5px" }}
+                  >
+                    Password must be at least 6 characters.
+                  </small>
+                )}
               </div>
             </div>
 
             <div className="form-buttons">
-              <button type="submit">
+              <button
+                type="submit"
+                disabled={passwordChanged && !isPasswordValid}
+              >
                 {editingEmployee ? "Update" : "Add"}
               </button>
               <button type="button" onClick={resetForm}>Cancel</button>
