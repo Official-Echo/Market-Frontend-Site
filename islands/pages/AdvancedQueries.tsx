@@ -95,7 +95,7 @@ export default function AdvancedQueries(props: Props) {
     },
     {
       id: "unsold_without_discount",
-      name: "Unsold Non-Promotional Items (Before Date)",
+      name: "Unsold Non-Promotional Items (After Date)",
       description:
         "Lists non-promotional items that were not sold before a specified date.",
       params: ["from"],
