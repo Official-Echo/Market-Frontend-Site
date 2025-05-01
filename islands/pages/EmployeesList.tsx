@@ -438,7 +438,6 @@ export default function EmployeesList(
                   placeholder={editingEmployee ? "••••••••" : ""}
                   aria-invalid={passwordChanged && !isPasswordValid}
                 />
-                {/* Show error message if changed and invalid */}
                 {passwordChanged && !isPasswordValid && (
                   <small
                     style={{ color: "red", display: "block", marginTop: "5px" }}

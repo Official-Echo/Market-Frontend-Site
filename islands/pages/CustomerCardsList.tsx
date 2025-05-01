@@ -1,4 +1,4 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import PrintButton from "../PrintButton.tsx";
 import { Role } from "../../utils/roles.ts";
 
@@ -193,6 +193,30 @@ export default function CustomerCardsList(
 
   const reportColumnWidths = [15, 15, 15, 10, 12, 10, 10, 8, 5];
 
+  useEffect(() => {
+    if (showForm && !editingCard) {
+      const numericParts = (customerCards || [])
+        .map((card) => {
+          const match = card.cardNumber?.match(/^CARD(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter((num) => !isNaN(num));
+
+      const highestNum = numericParts.length > 0
+        ? Math.max(...numericParts)
+        : 0;
+
+      const nextNum = highestNum + 1;
+      const paddingLength = 3;
+      const nextId = `CARD${nextNum.toString().padStart(paddingLength, "0")}`;
+
+      setFormData((prevData) => ({
+        ...prevData,
+        cardNumber: nextId,
+      }));
+    }
+  }, [showForm, editingCard, customerCards]);
+
   return (
     <div>
       <h1>Customer Cards</h1>
@@ -263,18 +287,23 @@ export default function CustomerCardsList(
           </h2>
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-              {!editingCard && (
-                <div className="form-group">
-                  <label>Card Number:</label>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    required
-                    value={formData.cardNumber}
-                    onInput={handleInputChange}
-                  />
-                </div>
-              )}
+              <div className="form-group">
+                <label>Card Number:</label>
+                <input
+                  type="text"
+                  name="cardNumber"
+                  value={formData.cardNumber}
+                  readOnly
+                  style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+                />
+                <small
+                  style={{ display: "block", marginTop: "5px", color: "#666" }}
+                >
+                  {editingCard
+                    ? "Card Number cannot be changed"
+                    : "Card Number automatically generated"}
+                </small>
+              </div>
               <div className="form-group">
                 <label>Surname:</label>
                 <input
