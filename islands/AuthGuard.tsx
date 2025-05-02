@@ -18,13 +18,13 @@ export default function AuthGuard(
     setIsMounted(true);
 
     if (!initialRole && initialPath !== "/" && isMounted) {
-      ;
+
       globalThis.location.href = "/";
     }
   }, [initialRole, initialPath, isMounted]);
 
   if (initialPath === "/" && initialRole === null) {
-    ;
+
     return null;
   }
 

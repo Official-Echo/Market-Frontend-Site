@@ -12,12 +12,9 @@ export async function apiFetch(
 				?.split("=")[1]
 			: undefined);
 
-	if (token) {
+	if (token)
 		headers.set("Authorization", `Bearer ${token}`);
-		;
-	} else {
-		;
-	}
+
 	headers.set("Content-Type", "application/json");
 
 	const response = await fetch(`${baseUrl}${endpoint}`, {

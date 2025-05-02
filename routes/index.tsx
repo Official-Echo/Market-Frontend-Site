@@ -18,18 +18,18 @@ export const handler: Handlers<LoginData> = {
 
         headers.set("Set-Cookie", `token=${auth.token}; Path=/; Max-Age=1800`);
         headers.set("Location", "/dashboard");
-        ;
+
         return new Response(null, { status: 302, headers });
       } else {
-        ;
+
         return ctx.render({ error: "Invalid username or password" });
       }
     } catch (error) {
       const errorMessage = error instanceof Error
         ? error.message
         : String(error);
-      ;
-      ;
+
+
       return ctx.render({ error: errorMessage || "Authentication failed" });
     }
   },
@@ -37,13 +37,13 @@ export const handler: Handlers<LoginData> = {
   GET(_req, ctx) {
     const token = _req.headers.get("Cookie")?.match(/token=([^;]+)/)?.[1];
     if (token) {
-      ;
+
       return new Response(null, {
         status: 302,
         headers: { Location: "/dashboard" },
       });
     }
-    ;
+
     return ctx.render({});
   },
 };

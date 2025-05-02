@@ -34,7 +34,7 @@ export async function requireAuth(
 	const token = req.headers.get("Cookie")?.match(/token=([^;]+)/)?.[1];
 
 	if (!token) {
-		;
+
 		return new Response(null, { status: 302, headers: { Location: "/" } });
 	}
 
@@ -42,14 +42,14 @@ export async function requireAuth(
 		const role = await fetchRole(token);
 
 		if (!role) {
-			;
+
 			const headers = new Headers({ Location: "/" });
 			headers.set("Set-Cookie", "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
 			return new Response(null, { status: 302, headers });
 		}
 
 		// Role fetched successfully
-		;
+
 		ctx.state.role = role;
 		return await next();
 	} catch (error) {

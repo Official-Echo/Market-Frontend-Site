@@ -167,7 +167,7 @@ export default function AdvancedQueries(props: Props) {
       });
 
       const url = `${selectedQuery.endpoint}?${urlParams.toString()}`;
-      ;
+
 
       const rawData = await apiFetch(url);
 

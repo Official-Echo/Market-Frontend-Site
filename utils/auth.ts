@@ -33,7 +33,7 @@ export async function fetchRole(token: string): Promise<Role | null> {
 		return null;
 	}
 	try {
-		;
+
 		const userData = await apiFetch("/api/employees/me", {}, token);
 		return userData.role === "Manager" ? Role.MANAGER : Role.CASHIER;
 	} catch (err) {
