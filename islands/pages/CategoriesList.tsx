@@ -1,4 +1,4 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import PrintButton from "../PrintButton.tsx";
 
 interface Category {
@@ -25,6 +25,7 @@ export default function CategoriesList(
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<Partial<Category>>({
+    categoryNumber: undefined,
     categoryName: "",
   });
 
@@ -103,6 +104,7 @@ export default function CategoriesList(
   const startEdit = (cat: Category) => {
     setEditingCategory(cat);
     setFormData({
+      categoryNumber: cat.categoryNumber,
       categoryName: cat.categoryName,
     });
     setShowForm(true);
@@ -111,15 +113,33 @@ export default function CategoriesList(
   const resetForm = () => {
     setEditingCategory(null);
     setFormData({
+      categoryNumber: undefined,
       categoryName: "",
     });
     setShowForm(false);
   };
 
+  useEffect(() => {
+    if (showForm && !editingCategory) {
+      const numericIds = (categories || [])
+        .map((cat) => cat.categoryNumber)
+        .filter((num) => typeof num === "number" && !isNaN(num));
+
+      const highestNum = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+
+      const nextNum = highestNum + 1;
+
+      setFormData((prevData) => ({
+        ...prevData,
+        categoryNumber: nextNum,
+      }));
+    }
+  }, [showForm, editingCategory, categories]);
+
   const reportHeaders = ["Category Number", "Category Name"];
   const getReportRows = () => {
     return sortedCategories.map(
-      (cat) => [cat.categoryNumber, cat.categoryName]
+      (cat) => [cat.categoryNumber, cat.categoryName],
     );
   };
 
@@ -151,6 +171,24 @@ export default function CategoriesList(
           </h2>
           <form onSubmit={handleSubmit}>
             <div className="form-row">
+              <div className="form-group">
+                <label>Category Number:</label>
+                <input
+                  type="number"
+                  name="categoryNumber"
+                  value={formData.categoryNumber ?? ""}
+                  readOnly
+                  style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+                />
+                <small
+                  style={{ display: "block", marginTop: "5px", color: "#666" }}
+                >
+                  {editingCategory
+                    ? "Category Number cannot be changed"
+                    : "Category Number automatically generated"}
+                </small>
+              </div>
+
               <div className="form-group">
                 <label>Category Name:</label>
                 <input
