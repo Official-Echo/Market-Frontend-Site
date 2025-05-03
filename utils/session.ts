@@ -47,9 +47,6 @@ export async function requireAuth(
 			headers.set("Set-Cookie", "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
 			return new Response(null, { status: 302, headers });
 		}
-
-		// Role fetched successfully
-
 		ctx.state.role = role;
 		return await next();
 	} catch (error) {

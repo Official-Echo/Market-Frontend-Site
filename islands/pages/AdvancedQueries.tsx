@@ -97,7 +97,7 @@ export default function AdvancedQueries(props: Props) {
       id: "unsold_without_discount",
       name: "Unsold Non-Promotional Items (After Date)",
       description:
-        "Lists non-promotional items that were not sold before a specified date.",
+        "Lists non-promotional items that were not sold after a specified date.",
       params: ["from"],
       endpoint: "/api/specific_info/unsold_without_discount",
       mapResult: (data: any[]): QueryResult => ({
