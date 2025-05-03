@@ -30,7 +30,7 @@ export default function CategoriesList(
   });
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "categoryName",
+    key: "categoryNumber",
     direction: "ascending",
   });
 
@@ -215,10 +215,16 @@ export default function CategoriesList(
         <table>
           <thead>
             <tr>
-              <th onClick={() => requestSort("categoryNumber")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("categoryNumber")}
+              >
                 Category Number{getSortDirectionIndicator("categoryNumber")}
               </th>
-              <th onClick={() => requestSort("categoryName")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("categoryName")}
+              >
                 Category Name{getSortDirectionIndicator("categoryName")}
               </th>
               <th>Actions</th>
@@ -229,8 +235,11 @@ export default function CategoriesList(
               <tr key={cat.categoryNumber}>
                 <td>{cat.categoryNumber}</td>
                 <td>{cat.categoryName}</td>
-                <td>
-                  <button type="button" onClick={() => startEdit(cat)}>
+                <td className="table-action-buttons">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(cat)}
+                  >
                     Edit
                   </button>
                   <button

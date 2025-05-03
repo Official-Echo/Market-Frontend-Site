@@ -38,8 +38,8 @@ export default function ReceiptsList({ receipts, onDelete, role }: Props) {
   const [namesLoading, setNamesLoading] = useState<boolean>(false);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "printDate",
-    direction: "descending",
+    key: "receiptNumber",
+    direction: "ascending",
   });
 
   const formatDate = (dateStr: string) => {
@@ -288,22 +288,40 @@ export default function ReceiptsList({ receipts, onDelete, role }: Props) {
         <table>
           <thead>
             <tr>
-              <th onClick={() => requestSort("receiptNumber")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("receiptNumber")}
+              >
                 Receipt Number{getSortDirectionIndicator("receiptNumber")}
               </th>
-              <th onClick={() => requestSort("printDate")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("printDate")}
+              >
                 Date{getSortDirectionIndicator("printDate")}
               </th>
-              <th onClick={() => requestSort("employeeName")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("employeeName")}
+              >
                 Employee{getSortDirectionIndicator("employeeName")}
               </th>
-              <th onClick={() => requestSort("cardNumber")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("cardNumber")}
+              >
                 Customer Card{getSortDirectionIndicator("cardNumber")}
               </th>
-              <th onClick={() => requestSort("sumTotal")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("sumTotal")}
+              >
                 Total{getSortDirectionIndicator("sumTotal")}
               </th>
-              <th onClick={() => requestSort("vat")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("vat")}
+              >
                 VAT{getSortDirectionIndicator("vat")}
               </th>
               <th>Actions</th>
@@ -319,7 +337,7 @@ export default function ReceiptsList({ receipts, onDelete, role }: Props) {
                   <td>{receipt.cardNumber || "No card"}</td>
                   <td>${receipt.sumTotal.toFixed(2)}</td>
                   <td>${receipt.vat.toFixed(2)}</td>
-                  <td>
+                  <td className="table-action-buttons">
                     <button
                       type="button"
                       onClick={() => handleViewDetails(receipt.receiptNumber)}
@@ -328,17 +346,19 @@ export default function ReceiptsList({ receipts, onDelete, role }: Props) {
                         ? "Hide Details"
                         : "View Details"}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        confirm(
-                          "Are you sure you want to delete this receipt?",
-                        ) &&
-                        onDelete(receipt.receiptNumber)}
-                      className="delete-btn"
-                    >
-                      Delete
-                    </button>
+                    {role === Role.MANAGER && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          confirm(
+                            "Are you sure you want to delete this receipt?",
+                          ) &&
+                          onDelete(receipt.receiptNumber)}
+                        className="delete-btn"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
                 {selectedReceipt === receipt.receiptNumber && (

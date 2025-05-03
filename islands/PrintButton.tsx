@@ -342,20 +342,28 @@ export default function PrintButton({
     totalPages?: number,
   ) {
     const date = new Date().toLocaleDateString();
-    let footerStr = footerText || `${storeName} | Generated on ${date}`;
 
-    if (totalPages) {
-      footerStr += ` | Page ${currentPage} of ${totalPages}`;
-    }
+    const mainFooterStr = footerText || `${storeName} | Generated on ${date}`;
 
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
+
     doc.text(
-      footerStr,
-      pageWidth / 2,
+      mainFooterStr,
+      margin,
       pageHeight - margin / 2,
-      { align: "center" },
+      { align: "left" },
     );
+
+    if (totalPages) {
+      const pageStr = `Page ${currentPage} of ${totalPages}`;
+      doc.text(
+        pageStr,
+        pageWidth - margin,
+        pageHeight - margin / 2,
+        { align: "right" },
+      );
+    }
   }
 
   const handlePrint = () => {

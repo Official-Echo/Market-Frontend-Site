@@ -1,4 +1,8 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import LookupInput, { LookupOption } from "../../components/LookUpInput.tsx";
+import { apiFetch } from "../../utils/api.ts";
+import PrintButton from "../PrintButton.tsx";
+
 interface SaleItem {
   receiptNumber: string;
   printDate: string;
@@ -17,11 +21,16 @@ interface Props {
   reportData?: ReportData | null;
 }
 
+interface ProductOption extends LookupOption {
+  upc: string;
+  productName: string;
+}
+
 export default function ProductSalesReport({
   onCheckQuantity,
   reportData,
 }: Props) {
-  const [upc, setUpc] = useState(reportData?.searchParams?.upc || "");
+  const [upc, setUpc] = useState<string>(reportData?.searchParams?.upc || "");
   const [fromDate, setFromDate] = useState(
     reportData?.searchParams?.from || "",
   );
@@ -29,11 +38,108 @@ export default function ProductSalesReport({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-
   const [hasChecked, setHasChecked] = useState(!!reportData?.searchParams);
+
+  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
+  const [isProductLoading, setIsProductLoading] = useState(false);
+  const [productFetchError, setProductFetchError] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const fetchAndCombineProducts = async () => {
+      setIsProductLoading(true);
+      setProductFetchError(null);
+      setProductOptions([]);
+
+      try {
+        const [storeProductsData, productsData] = await Promise.all([
+          apiFetch("/api/store-products/search"),
+          apiFetch("/api/products/search"),
+        ]);
+
+        if (!Array.isArray(storeProductsData)) {
+          throw new Error(
+            "Invalid data format received from /api/store-products/search.",
+          );
+        }
+        if (!Array.isArray(productsData)) {
+          throw new Error(
+            "Invalid data format received from /api/products/search.",
+          );
+        }
+
+        const productNameMap = new Map<string, string>();
+        (productsData as any[]).forEach((p) => {
+          if (p && p.idProduct && p.productName) {
+            productNameMap.set(String(p.idProduct), p.productName);
+          }
+        });
+
+        const combinedOptions = (storeProductsData as any[])
+          .filter((sp) =>
+            sp && typeof sp.upc === "string" && sp.upc.trim() !== "" &&
+            sp.idProduct
+          )
+          .map((sp) => {
+            const productName = productNameMap.get(String(sp.idProduct));
+            if (productName) {
+              return {
+                upc: sp.upc,
+                productName: productName,
+              };
+            }
+            return null;
+          })
+          .filter((option): option is ProductOption => option !== null);
+
+        if (
+          combinedOptions.length === 0 &&
+          (storeProductsData.length > 0 || productsData.length > 0)
+        ) {
+          console.warn(
+            "ProductSalesReport: Failed to combine product and store-product data. Check if 'idProduct' exists and matches in both API responses.",
+          );
+        } else if (
+          combinedOptions.length <
+            storeProductsData.filter((sp) =>
+              sp && typeof sp.upc === "string" && sp.upc.trim() !== ""
+            ).length
+        ) {
+          console.warn(
+            "ProductSalesReport: Some store products with UPCs could not be matched with a product name via idProduct.",
+          );
+        }
+        console.log(
+          "ProductSalesReport: Combined Product Options for Lookup:",
+          combinedOptions,
+        );
+
+        setProductOptions(combinedOptions);
+      } catch (err) {
+        console.error(
+          "ProductSalesReport: Failed to fetch or combine products for lookup:",
+          err,
+        );
+        setProductFetchError(
+          err instanceof Error
+            ? err.message
+            : "Could not load product options.",
+        );
+      } finally {
+        setIsProductLoading(false);
+      }
+    };
+
+    fetchAndCombineProducts();
+  }, []);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
+    if (!upc) {
+      setError("Please select a product UPC.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setDetailsExpanded(false);
@@ -51,12 +157,25 @@ export default function ProductSalesReport({
     }
   };
 
+  const handleUpcChange = (
+    name: string,
+    selectedValue: string | number | null,
+  ) => {
+    setUpc(selectedValue ? String(selectedValue) : "");
+  };
+
   const formatDate = (dateStr: string | undefined | null) => {
     if (!dateStr) return "Not specified";
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return "Invalid Date";
-      return date.toLocaleDateString();
+
+      const utcDate = new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+      );
+      return utcDate.toLocaleDateString();
     } catch (_e) {
       return "Invalid Date";
     }
@@ -108,15 +227,23 @@ export default function ProductSalesReport({
 
       <form onSubmit={handleSubmit}>
         <div className="form-row">
-          <div className="form-group">
-            <label>Product UPC:</label>
-            <input
-              type="text"
-              value={upc}
-              onChange={(e) => setUpc((e.target as HTMLInputElement).value)}
-              required
-            />
-          </div>
+          <LookupInput
+            label="Product UPC:"
+            name="upc"
+            value={upc}
+            onChange={handleUpcChange}
+            options={productOptions}
+            optionValueKey="upc"
+            optionLabelKey="upc"
+            optionSecondaryLabelKey="productName"
+            placeholder={isProductLoading
+              ? "Loading products..."
+              : "Enter or select UPC/Name"}
+            required
+            disabled={isLoading || isProductLoading}
+            fetchError={productFetchError}
+          />
+
           <div className="form-group">
             <label>From Date:</label>
             <input
@@ -124,6 +251,7 @@ export default function ProductSalesReport({
               value={fromDate}
               onChange={(e) =>
                 setFromDate((e.target as HTMLInputElement).value)}
+              disabled={isLoading}
             />
           </div>
           <div className="form-group">
@@ -132,11 +260,15 @@ export default function ProductSalesReport({
               type="date"
               value={toDate}
               onChange={(e) => setToDate((e.target as HTMLInputElement).value)}
+              disabled={isLoading}
             />
           </div>
         </div>
         <div className="form-buttons">
-          <button type="submit" disabled={isLoading}>
+          <button
+            type="submit"
+            disabled={isLoading || isProductLoading || !upc}
+          >
             {isLoading ? "Checking..." : "Check Quantity"}
           </button>
         </div>
@@ -177,6 +309,26 @@ export default function ProductSalesReport({
               </tr>
             </tbody>
           </table>
+
+          <div
+            className="report-actions"
+            style={{ marginTop: "10px", marginBottom: "20px" }}
+          >
+            <PrintButton
+              title="Product Sales Summary Report"
+              subtitle={`Product: ${reportData.searchParams.upc} (${
+                formatDate(reportData.searchParams.from)
+              } - ${formatDate(reportData.searchParams.to)})`}
+              filename={`zlagoda-sales-summary-${reportData.searchParams.upc}.pdf`}
+              storeName="ZLAGODA Supermarket"
+              footerText="Sales Summary"
+              tableOptions={{
+                headers: summaryReportHeaders,
+                getRows: getSummaryReportRows,
+                columnWidths: summaryColumnWidths,
+              }}
+            />
+          </div>
 
           {reportData.sales && reportData.sales.length > 0 && (
             <div className="sales-details-container">
@@ -223,6 +375,23 @@ export default function ProductSalesReport({
                       </tr>
                     </tfoot>
                   </table>
+
+                  <div className="report-actions" style={{ marginTop: "10px" }}>
+                    <PrintButton
+                      title="Product Sales Detail Report"
+                      subtitle={`Product: ${reportData.searchParams.upc} (${
+                        formatDate(reportData.searchParams.from)
+                      } - ${formatDate(reportData.searchParams.to)})`}
+                      filename={`zlagoda-sales-detail-${reportData.searchParams.upc}.pdf`}
+                      storeName="ZLAGODA Supermarket"
+                      footerText="Detailed Sales Transactions"
+                      tableOptions={{
+                        headers: detailsReportHeaders,
+                        getRows: getDetailsReportRows,
+                        columnWidths: detailsColumnWidths,
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>

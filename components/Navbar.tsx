@@ -1,17 +1,47 @@
+import { useEffect, useState } from "preact/hooks";
 import { Role } from "../utils/roles.ts";
+import { apiFetch } from "../utils/api.ts";
 
 interface Props {
-  role: Role;
+  role: Role | null;
   currentPath: string;
   navigate: (path: string) => void;
 }
 
 export default function Navbar({ role, currentPath, navigate }: Props) {
-  const handleLogout = () => {
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    globalThis.location.href = "/";
-    return false;
+  const [showAdvancedQueries, setShowAdvancedQueries] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        setShowAdvancedQueries(true);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await apiFetch("/api/logout", { method: "POST" });
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      globalThis.location.href = "/login";
+    }
   };
+
+  if (!role) {
+    return null;
+  }
 
   return (
     <nav className="navbar">
@@ -33,24 +63,6 @@ export default function Navbar({ role, currentPath, navigate }: Props) {
         >
           Dashboard
         </a>
-        <a
-          className={currentPath === "/products" ? "active" : ""}
-          onClick={() => navigate("/products")}
-        >
-          Products
-        </a>
-        <a
-          className={currentPath === "/receipts" ? "active" : ""}
-          onClick={() => navigate("/receipts")}
-        >
-          Receipts
-        </a>
-        <a
-          className={currentPath === "/customers" ? "active" : ""}
-          onClick={() => navigate("/customers")}
-        >
-          Customer Cards
-        </a>
         {role === Role.MANAGER && (
           <>
             <a
@@ -66,27 +78,67 @@ export default function Navbar({ role, currentPath, navigate }: Props) {
               Categories
             </a>
             <a
+              className={currentPath === "/products" ? "active" : ""}
+              onClick={() => navigate("/products")}
+            >
+              Products
+            </a>
+            <a
+              className={currentPath === "/customers" ? "active" : ""}
+              onClick={() => navigate("/customers")}
+            >
+              Customer Cards
+            </a>
+            <a
+              className={currentPath === "/receipts" ? "active" : ""}
+              onClick={() => navigate("/receipts")}
+            >
+              Receipts
+            </a>
+            <a
               className={currentPath === "/reports" ? "active" : ""}
               onClick={() => navigate("/reports")}
             >
               Reports
             </a>
 
-            <a
-              className={currentPath === "/advanced-queries" ? "active" : ""}
-              onClick={() => navigate("/advanced-queries")}
-            >
-              Advanced Queries
-            </a>
+            {showAdvancedQueries && (
+              <a
+                className={currentPath === "/advanced-queries" ? "active" : ""}
+                onClick={() => navigate("/advanced-queries")}
+              >
+                Advanced Queries
+              </a>
+            )}
           </>
         )}
         {role === Role.CASHIER && (
-          <a
-            className={currentPath === "/sell" ? "active" : ""}
-            onClick={() => navigate("/sell")}
-          >
-            New Sale
-          </a>
+          <>
+            <a
+              className={currentPath === "/customers" ? "active" : ""}
+              onClick={() => navigate("/customers")}
+            >
+              Customer Cards
+            </a>
+            <a
+              className={currentPath === "/products" ? "active" : ""}
+              onClick={() => navigate("/products")}
+            >
+              Products
+            </a>
+            <a
+              className={currentPath === "/receipts" ? "active" : ""}
+              onClick={() => navigate("/receipts")}
+            >
+              Receipts
+            </a>
+            <a
+              className={currentPath === "/sell" ? "active" : ""}
+              onClick={() => navigate("/sell")}
+            >
+              New Sale
+            </a>
+          </>
         )}
         <a
           onClick={handleLogout}

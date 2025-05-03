@@ -208,6 +208,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
     return productsForReport.map((p) => [
       p.idProduct,
       p.productName,
+      p.upc,
       p.category,
       `$${p.sellingPrice.toFixed(2)}`,
       p.quantity,
@@ -219,6 +220,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
   const reportHeaders = [
     "ID",
     "Name",
+    "UPC",
     "Category",
     "Price",
     "Quantity",
@@ -226,7 +228,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
     "Manufacturer",
   ];
 
-  const reportColumnWidths = [10, 25, 15, 10, 10, 10, 20];
+  const reportColumnWidths = [10, 20, 15, 10, 10, 10, 10, 15];
 
   return (
     <div className="product-filter">
@@ -362,22 +364,46 @@ export default function ProductFilter({ products }: { products: Product[] }) {
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th onClick={() => requestSort("idProduct")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("idProduct")}
+              >
                 ID{getSortDirectionIndicator("idProduct")}
               </th>
-              <th onClick={() => requestSort("productName")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("productName")}
+              >
                 Name{getSortDirectionIndicator("productName")}
               </th>
-              <th onClick={() => requestSort("category")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("upc")}
+              >
+                UPC{getSortDirectionIndicator("upc")}
+              </th>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("category")}
+              >
                 Category{getSortDirectionIndicator("category")}
               </th>
-              <th onClick={() => requestSort("sellingPrice")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("sellingPrice")}
+              >
                 Price{getSortDirectionIndicator("sellingPrice")}
               </th>
-              <th onClick={() => requestSort("quantity")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("quantity")}
+              >
                 Quantity{getSortDirectionIndicator("quantity")}
               </th>
-              <th onClick={() => requestSort("isPromotional")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("isPromotional")}
+              >
                 Promotional{getSortDirectionIndicator("isPromotional")}
               </th>
             </tr>
@@ -397,6 +423,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
                 </td>
                 <td>{p.idProduct}</td>
                 <td>{p.productName}</td>
+                <td>{p.upc}</td>
                 <td>{p.category}</td>
                 <td>${p.sellingPrice.toFixed(2)}</td>
                 <td>{p.quantity}</td>

@@ -54,7 +54,7 @@ export default function EmployeesList(
   const [isPasswordValid, setIsPasswordValid] = useState(true);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "surname",
+    key: "idEmployee",
     direction: "ascending",
   });
 
@@ -71,7 +71,7 @@ export default function EmployeesList(
         ? Math.max(...numericParts)
         : 0;
 
-      const nextNum = (highestNum + 1).toString().padStart(4, "0");
+      const nextNum = (highestNum + 1).toString().padStart(3, "0");
       const nextId = `EMP${nextNum}`;
 
       setFormData((prevData) => ({
@@ -144,7 +144,7 @@ export default function EmployeesList(
     if (target.name === "password") {
       setPasswordChanged(true);
 
-      setIsPasswordValid(value === "" || String(value).length >= 6);
+      setIsPasswordValid(value === "" || String(value).length >= 7);
     }
 
     setFormData({
@@ -157,7 +157,7 @@ export default function EmployeesList(
     e.preventDefault();
 
     if ((!editingEmployee || passwordChanged) && !isPasswordValid) {
-      alert("Password must be at least 6 characters long if set.");
+      alert("Password must be at least 7 characters long if set.");
       return;
     }
 
@@ -429,7 +429,11 @@ export default function EmployeesList(
                 />
               </div>
               <div className="form-group">
-                <label>Password (leave blank to keep current):</label>
+                <label>
+                  {editingEmployee
+                    ? "Password (leave blank to keep current):"
+                    : "Password (Required for new employees):"}
+                </label>
                 <input
                   type="password"
                   name="password"
@@ -437,12 +441,13 @@ export default function EmployeesList(
                   onInput={handleInputChange}
                   placeholder={editingEmployee ? "••••••••" : ""}
                   aria-invalid={passwordChanged && !isPasswordValid}
+                  required={!editingEmployee}
                 />
                 {passwordChanged && !isPasswordValid && (
                   <small
                     style={{ color: "red", display: "block", marginTop: "5px" }}
                   >
-                    Password must be at least 6 characters.
+                    Password must be at least 7 characters.
                   </small>
                 )}
               </div>
@@ -465,22 +470,40 @@ export default function EmployeesList(
         <table>
           <thead>
             <tr>
-              <th onClick={() => requestSort("idEmployee")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("idEmployee")}
+              >
                 ID{getSortDirectionIndicator("idEmployee")}
               </th>
-              <th onClick={() => requestSort("surname")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("surname")}
+              >
                 Name{getSortDirectionIndicator("surname")}
               </th>
-              <th onClick={() => requestSort("role")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("role")}
+              >
                 Role{getSortDirectionIndicator("role")}
               </th>
-              <th onClick={() => requestSort("salary")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("salary")}
+              >
                 Salary{getSortDirectionIndicator("salary")}
               </th>
-              <th onClick={() => requestSort("phoneNumber")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("phoneNumber")}
+              >
                 Phone{getSortDirectionIndicator("phoneNumber")}
               </th>
-              <th onClick={() => requestSort("city")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("city")}
+              >
                 Address{getSortDirectionIndicator("city")}
               </th>
               <th>Actions</th>
@@ -501,8 +524,11 @@ export default function EmployeesList(
                     emp.zipCode || ""
                   }`.trim().replace(/^, |, $/g, "")}
                 </td>
-                <td>
-                  <button type="button" onClick={() => startEdit(emp)}>
+                <td className="table-action-buttons">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(emp)}
+                  >
                     Edit
                   </button>
                   <button

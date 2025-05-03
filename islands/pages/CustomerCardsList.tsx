@@ -45,7 +45,7 @@ export default function CustomerCardsList(
     percent: 0,
   });
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "surname",
+    key: "cardNumber",
     direction: "ascending",
   });
 
@@ -273,7 +273,7 @@ export default function CustomerCardsList(
               resetForm();
               setShowForm(true);
             }}
-            style={{ alignSelf: "flex-end" }}
+            style={{ alignSelf: "flex-end", marginBottom: "6px" }}
           >
             Add New Card
           </button>
@@ -413,19 +413,34 @@ export default function CustomerCardsList(
         <table>
           <thead>
             <tr>
-              <th onClick={() => requestSort("cardNumber")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("cardNumber")}
+              >
                 Card Number{getSortDirectionIndicator("cardNumber")}
               </th>
-              <th onClick={() => requestSort("surname")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("surname")}
+              >
                 Customer Name{getSortDirectionIndicator("surname")}
               </th>
-              <th onClick={() => requestSort("phoneNumber")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("phoneNumber")}
+              >
                 Phone{getSortDirectionIndicator("phoneNumber")}
               </th>
-              <th onClick={() => requestSort("city")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("city")}
+              >
                 Address{getSortDirectionIndicator("city")}
               </th>
-              <th onClick={() => requestSort("percent")}>
+              <th
+                className="clickable-header"
+                onClick={() => requestSort("percent")}
+              >
                 Discount{getSortDirectionIndicator("percent")}
               </th>
 
@@ -453,8 +468,11 @@ export default function CustomerCardsList(
                   <td>{card.percent}%</td>
 
                   {(role === Role.MANAGER || role === Role.CASHIER) && (
-                    <td>
-                      <button type="button" onClick={() => startEdit(card)}>
+                    <td className="table-action-buttons">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(card)}
+                      >
                         Edit
                       </button>
 

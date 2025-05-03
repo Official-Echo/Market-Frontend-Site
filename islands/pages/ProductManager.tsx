@@ -34,13 +34,19 @@ export default function ProductManager({
   const [selectedCategory, setSelectedCategory] = useState<number | "">("");
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "productName",
+    key: "idProduct",
     direction: "ascending",
   });
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      if (!product || typeof product.productName !== "string") {
+        console.warn("Skipping product due to missing name:", product);
+        return false;
+      }
+
       const term = searchTerm.toLowerCase();
+
       const nameMatch = product.productName.toLowerCase().includes(term);
       const idMatch = product.idProduct?.toString().includes(term);
       const upcMatch = product.upc?.toLowerCase().includes(term);
@@ -132,6 +138,7 @@ export default function ProductManager({
   const reportHeaders = [
     "ID",
     "Name",
+    "UPC",
     "Manufacturer",
     "Category",
     "Price",
@@ -142,6 +149,7 @@ export default function ProductManager({
     return sortedProducts.map((product) => [
       product.idProduct,
       product.productName,
+      product.upc,
       product.manufacturer || "N/A",
       product.category,
       `$${product.sellingPrice?.toFixed(2)}`,
@@ -150,7 +158,7 @@ export default function ProductManager({
     ]);
   };
 
-  const reportColumnWidths = [10, 25, 15, 15, 10, 10, 15];
+  const reportColumnWidths = [10, 20, 15, 15, 10, 10, 10, 10];
 
   return (
     <div>
@@ -216,25 +224,52 @@ export default function ProductManager({
               <table>
                 <thead>
                   <tr>
-                    <th onClick={() => requestSort("idProduct")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("idProduct")}
+                    >
                       ID{getSortDirectionIndicator("idProduct")}
                     </th>
-                    <th onClick={() => requestSort("productName")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("productName")}
+                    >
                       Name{getSortDirectionIndicator("productName")}
                     </th>
-                    <th onClick={() => requestSort("manufacturer")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("upc")}
+                    >
+                      UPC{getSortDirectionIndicator("upc")}
+                    </th>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("manufacturer")}
+                    >
                       Manufacturer{getSortDirectionIndicator("manufacturer")}
                     </th>
-                    <th onClick={() => requestSort("category")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("category")}
+                    >
                       Category{getSortDirectionIndicator("category")}
                     </th>
-                    <th onClick={() => requestSort("sellingPrice")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("sellingPrice")}
+                    >
                       Price{getSortDirectionIndicator("sellingPrice")}
                     </th>
-                    <th onClick={() => requestSort("quantity")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("quantity")}
+                    >
                       Quantity{getSortDirectionIndicator("quantity")}
                     </th>
-                    <th onClick={() => requestSort("isPromotional")}>
+                    <th
+                      className="clickable-header"
+                      onClick={() => requestSort("isPromotional")}
+                    >
                       Promotional{getSortDirectionIndicator("isPromotional")}
                     </th>
                     <th>Actions</th>
@@ -245,12 +280,13 @@ export default function ProductManager({
                     <tr key={product.idProduct}>
                       <td>{product.idProduct}</td>
                       <td>{product.productName}</td>
+                      <td>{product.upc}</td>
                       <td>{product.manufacturer || "N/A"}</td>
                       <td>{product.category}</td>
                       <td>${product.sellingPrice?.toFixed(2)}</td>
                       <td>{product.quantity}</td>
                       <td>{product.isPromotional ? "Yes" : "No"}</td>
-                      <td>
+                      <td className="table-action-buttons">
                         <button
                           type="button"
                           onClick={() => handleEditProduct(product)}
@@ -273,7 +309,7 @@ export default function ProductManager({
                   ))}
                   {sortedProducts.length === 0 && (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: "center" }}>
+                      <td colSpan={9} style={{ textAlign: "center" }}>
                         No products found matching criteria.
                       </td>
                     </tr>

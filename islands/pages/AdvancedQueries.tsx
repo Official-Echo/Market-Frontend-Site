@@ -1,6 +1,14 @@
-import { useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { apiFetch } from "../../utils/api.ts";
 import PrintButton from "../PrintButton.tsx";
+import LookupInput, { LookupOption } from "../../components/LookUpInput.tsx";
+
+interface EmployeeOption extends LookupOption {
+  idEmployee: string;
+  surname: string;
+  name: string;
+  fullName?: string;
+}
 
 interface QueryResult {
   headers: string[];
@@ -10,7 +18,7 @@ interface QueryResult {
 }
 
 type QueryParams = {
-  idEmployee?: string;
+  idEmployee?: string | null;
   from?: string;
   to?: string;
 };
@@ -18,13 +26,74 @@ type QueryParams = {
 interface Props {
 }
 
+type SortConfig = {
+  key: number | null;
+  direction: "ascending" | "descending";
+};
+
 export default function AdvancedQueries(props: Props) {
   const [selectedQueryId, setSelectedQueryId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<QueryResult | null>(null);
-
   const [queryParams, setQueryParams] = useState<QueryParams>({});
+
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
+  const [isEmployeeLoading, setIsEmployeeLoading] = useState(false);
+  const [employeeFetchError, setEmployeeFetchError] = useState<string | null>(
+    null,
+  );
+
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: null,
+    direction: "ascending",
+  });
+
+  useEffect(() => {
+    const needsEmployeeParam = availableQueries.find((q) =>
+      q.id === selectedQueryId
+    )?.params.includes("idEmployee");
+
+    if (
+      needsEmployeeParam && employeeOptions.length === 0 &&
+      !isEmployeeLoading && !employeeFetchError
+    ) {
+      const fetchEmployees = async () => {
+        setIsEmployeeLoading(true);
+        setEmployeeFetchError(null);
+        try {
+          const data = await apiFetch("/api/employees/search");
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid employee data format received.");
+          }
+
+          const processedOptions = (data as EmployeeOption[]).map((emp) => ({
+            ...emp,
+            fullName: `${emp.name} ${emp.surname}`,
+          }));
+          setEmployeeOptions(processedOptions);
+        } catch (err) {
+          console.error("Failed to fetch employees:", err);
+          setEmployeeFetchError(
+            err instanceof Error
+              ? err.message
+              : "Could not load employee options.",
+          );
+        } finally {
+          setIsEmployeeLoading(false);
+        }
+      };
+      fetchEmployees();
+    } else if (!needsEmployeeParam) {
+      setEmployeeOptions([]);
+      setEmployeeFetchError(null);
+    }
+  }, [
+    selectedQueryId,
+    employeeOptions.length,
+    isEmployeeLoading,
+    employeeFetchError,
+  ]);
 
   const availableQueries = [
     {
@@ -36,10 +105,18 @@ export default function AdvancedQueries(props: Props) {
       endpoint: "/api/specific_info/sold_by_category",
       mapResult: (data: any[]): QueryResult => ({
         title: "Sales by Category Report",
-        headers: ["Category Number", "Category Name", "Total Sold"],
+
+        headers: [
+          "Category Number",
+          "Category Name",
+          "Product Name",
+          "Total Sold",
+        ],
+
         rows: data.map((item) => [
           item.categoryNumber,
           item.categoryName,
+          item.productName,
           item.totalSold,
         ]),
       }),
@@ -95,9 +172,9 @@ export default function AdvancedQueries(props: Props) {
     },
     {
       id: "unsold_without_discount",
-      name: "Unsold Non-Promotional Items (After Date)",
+      name: "Unsold Non-Promotional Items (Before Date)",
       description:
-        "Lists non-promotional items that were not sold after a specified date.",
+        "Lists non-promotional items that were not sold before a specified date.",
       params: ["from"],
       endpoint: "/api/specific_info/unsold_without_discount",
       mapResult: (data: any[]): QueryResult => ({
@@ -130,6 +207,7 @@ export default function AdvancedQueries(props: Props) {
     setResults(null);
     setError(null);
     setQueryParams({});
+    setSortConfig({ key: null, direction: "ascending" });
   };
 
   const handleParamChange = (e: Event) => {
@@ -140,14 +218,81 @@ export default function AdvancedQueries(props: Props) {
     }));
   };
 
+  const handleLookupParamChange = (
+    name: string,
+    selectedValue: string | number | null,
+  ) => {
+    setQueryParams((prev) => ({
+      ...prev,
+      [name]: typeof selectedValue === "number"
+        ? String(selectedValue)
+        : selectedValue,
+    }));
+  };
+
+  const requestSort = (index: number) => {
+    let direction: "ascending" | "descending" = "ascending";
+    if (sortConfig.key === index && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key: index, direction });
+  };
+
+  const getSortDirectionIndicator = (index: number) => {
+    if (sortConfig.key !== index) return null;
+    return sortConfig.direction === "ascending" ? " ↑" : " ↓";
+  };
+
+  const sortedResultsRows = useMemo(() => {
+    if (!results || !results.rows) return [];
+    const sortableItems = [...results.rows];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key!];
+        const bValue = b[sortConfig.key!];
+
+        if (aValue === null || aValue === undefined) {
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        }
+        if (bValue === null || bValue === undefined) {
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        }
+
+        const numA = typeof aValue === "string"
+          ? parseFloat(aValue.replace(/[^0-9.-]+/g, ""))
+          : aValue;
+        const numB = typeof bValue === "string"
+          ? parseFloat(bValue.replace(/[^0-9.-]+/g, ""))
+          : bValue;
+
+        if (
+          typeof numA === "number" && typeof numB === "number" &&
+          !isNaN(numA) && !isNaN(numB)
+        ) {
+          return sortConfig.direction === "ascending"
+            ? numA - numB
+            : numB - numA;
+        }
+
+        const strA = String(aValue).toLowerCase();
+        const strB = String(bValue).toLowerCase();
+        if (strA < strB) return sortConfig.direction === "ascending" ? -1 : 1;
+        if (strA > strB) return sortConfig.direction === "ascending" ? 1 : -1;
+
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [results, sortConfig]);
+
   const executeQuery = async () => {
     if (!selectedQuery) {
       setError("Please select a query.");
       return;
     }
-
     for (const param of selectedQuery.params) {
-      if (!queryParams[param as keyof QueryParams]) {
+      const value = queryParams[param as keyof QueryParams];
+      if (value === null || value === undefined || value === "") {
         setError(`Parameter '${param}' is required for this query.`);
         return;
       }
@@ -156,18 +301,19 @@ export default function AdvancedQueries(props: Props) {
     setIsLoading(true);
     setError(null);
     setResults(null);
+    setSortConfig({ key: null, direction: "ascending" });
 
     try {
       const urlParams = new URLSearchParams();
       selectedQuery.params.forEach((paramKey) => {
         const value = queryParams[paramKey as keyof QueryParams];
-        if (value) {
-          urlParams.append(paramKey, value);
+
+        if (value !== null && value !== undefined) {
+          urlParams.append(paramKey, String(value));
         }
       });
-
       const url = `${selectedQuery.endpoint}?${urlParams.toString()}`;
-
+      console.log("Executing API call:", url);
 
       const rawData = await apiFetch(url);
 
@@ -176,7 +322,6 @@ export default function AdvancedQueries(props: Props) {
           "Invalid data format received from API (expected an array).",
         );
       }
-
       const mappedResult = selectedQuery.mapResult(rawData);
       setResults({ ...mappedResult, description: selectedQuery.description });
     } catch (err) {
@@ -187,7 +332,7 @@ export default function AdvancedQueries(props: Props) {
     }
   };
 
-  const getReportRows = () => results?.rows || [];
+  const getReportRows = () => sortedResultsRows || [];
 
   const reportColumnWidths =
     results?.headers.map(() => 100 / (results.headers.length || 1)) || [];
@@ -219,17 +364,24 @@ export default function AdvancedQueries(props: Props) {
         {selectedQuery && selectedQuery.params.length > 0 && (
           <div className="form-row">
             {selectedQuery.params.includes("idEmployee") && (
-              <div className="form-group">
-                <label htmlFor="param-idEmployee">Employee ID:</label>
-                <input
-                  type="text"
-                  id="param-idEmployee"
-                  name="idEmployee"
-                  value={queryParams.idEmployee || ""}
-                  onChange={handleParamChange}
-                />
-              </div>
+              <LookupInput
+                label="Employee ID:"
+                name="idEmployee"
+                value={queryParams.idEmployee ?? null}
+                onChange={handleLookupParamChange}
+                options={employeeOptions}
+                optionValueKey="idEmployee"
+                optionLabelKey="idEmployee"
+                optionSecondaryLabelKey="fullName"
+                placeholder={isEmployeeLoading
+                  ? "Loading data..."
+                  : "Enter or select Employee ID"}
+                required
+                disabled={isEmployeeLoading || !!employeeFetchError}
+                fetchError={employeeFetchError}
+              />
             )}
+
             {selectedQuery.params.includes("from") && (
               <div className="form-group">
                 <label htmlFor="param-from">From Date:</label>
@@ -278,20 +430,28 @@ export default function AdvancedQueries(props: Props) {
               <i>{results.description}</i>
             </p>
           )}
-          {results.rows.length > 0
+
+          {sortedResultsRows.length > 0
             ? (
               <>
                 <div className="table-container" style={{ marginTop: "15px" }}>
-                  <table>
+                  <table className="data-table">
                     <thead>
                       <tr>
                         {results.headers.map((header, index) => (
-                          <th key={index}>{header}</th>
+                          <th
+                            className="clickable-header"
+                            key={index}
+                            onClick={() => requestSort(index)}
+                          >
+                            {header}
+                            {getSortDirectionIndicator(index)}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {results.rows.map((row, rowIndex) => (
+                      {sortedResultsRows.map((row, rowIndex) => (
                         <tr key={rowIndex}>
                           {row.map((cell, cellIndex) => (
                             <td key={cellIndex}>

@@ -226,6 +226,7 @@ export default function NewSale(
             <thead>
               <tr>
                 <th>Name</th>
+                <th>UPC</th>
                 <th>Price</th>
                 <th>Available</th>
                 <th>Action</th>
@@ -235,6 +236,7 @@ export default function NewSale(
               {filteredProducts.map((product) => (
                 <tr key={product.idProduct}>
                   <td>{product.productName}</td>
+                  <td>{product.upc}</td>
                   <td>${product.sellingPrice.toFixed(2)}</td>
                   <td>{product.quantity}</td>
                   <td>
