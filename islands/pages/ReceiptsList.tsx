@@ -284,6 +284,44 @@ export default function ReceiptsList({ receipts, onDelete, role }: Props) {
         </div>
       </div>
 
+      <div className="report-actions">
+        <PrintButton
+          title="Receipts Report"
+          subtitle={`Filtered Receipts - ${new Date().toLocaleDateString()}`}
+          contentSelector=".receipts-table-container"
+          filename="zlagoda-receipts-report.pdf"
+          storeName="ZLAGODA Supermarket"
+          footerText="Sales Data - Confidential"
+          tableOptions={{
+            headers: reportHeaders,
+            getRows: getReportRows,
+            columnWidths: reportColumnWidths,
+            autoTableOptions: {
+              didParseCell: (data: any) => {
+                if (data.section === "foot" && data.column.index === 4) {
+                  data.cell.styles.halign = "right";
+                }
+              },
+              footStyles: { fontStyle: "bold", fillColor: [240, 240, 240] },
+              foot: [
+                [
+                  {
+                    content: "Total:",
+                    colSpan: 4,
+                    styles: { halign: "right" },
+                  },
+                  {
+                    content: `$${totalSum.toFixed(2)}`,
+                    colSpan: 2,
+                    styles: { halign: "right" },
+                  },
+                ],
+              ],
+            },
+          }}
+        />
+      </div>
+
       <div className="receipts-table-container">
         <table>
           <thead>
@@ -529,44 +567,6 @@ export default function ReceiptsList({ receipts, onDelete, role }: Props) {
             </tr>
           </tfoot>
         </table>
-      </div>
-
-      <div className="report-actions">
-        <PrintButton
-          title="Receipts Report"
-          subtitle={`Filtered Receipts - ${new Date().toLocaleDateString()}`}
-          contentSelector=".receipts-table-container"
-          filename="zlagoda-receipts-report.pdf"
-          storeName="ZLAGODA Supermarket"
-          footerText="Sales Data - Confidential"
-          tableOptions={{
-            headers: reportHeaders,
-            getRows: getReportRows,
-            columnWidths: reportColumnWidths,
-            autoTableOptions: {
-              didParseCell: (data: any) => {
-                if (data.section === "foot" && data.column.index === 4) {
-                  data.cell.styles.halign = "right";
-                }
-              },
-              footStyles: { fontStyle: "bold", fillColor: [240, 240, 240] },
-              foot: [
-                [
-                  {
-                    content: "Total:",
-                    colSpan: 4,
-                    styles: { halign: "right" },
-                  },
-                  {
-                    content: `$${totalSum.toFixed(2)}`,
-                    colSpan: 2,
-                    styles: { halign: "right" },
-                  },
-                ],
-              ],
-            },
-          }}
-        />
       </div>
 
       {filteredReceipts.length === 0 && (

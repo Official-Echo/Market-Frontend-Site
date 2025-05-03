@@ -144,7 +144,7 @@ export default function EmployeesList(
     if (target.name === "password") {
       setPasswordChanged(true);
 
-      setIsPasswordValid(value === "" || String(value).length >= 7);
+      setIsPasswordValid(value === "" || String(value).length >= 6);
     }
 
     setFormData({
@@ -157,7 +157,7 @@ export default function EmployeesList(
     e.preventDefault();
 
     if ((!editingEmployee || passwordChanged) && !isPasswordValid) {
-      alert("Password must be at least 7 characters long if set.");
+      alert("Password must be at least 6 characters long if set.");
       return;
     }
 
@@ -283,6 +283,21 @@ export default function EmployeesList(
         >
           Add New Employee
         </button>
+      </div>
+
+      <div className="report-actions">
+        <PrintButton
+          title="Employees Report"
+          subtitle={`Generated on ${new Date().toLocaleDateString()}`}
+          filename="zlagoda-employees-report.pdf"
+          storeName="ZLAGODA Supermarket"
+          footerText="Confidential - HR Data"
+          tableOptions={{
+            headers: reportHeaders,
+            getRows: getReportRows,
+            columnWidths: reportColumnWidths,
+          }}
+        />
       </div>
 
       {showForm && (
@@ -447,7 +462,7 @@ export default function EmployeesList(
                   <small
                     style={{ color: "red", display: "block", marginTop: "5px" }}
                   >
-                    Password must be at least 7 characters.
+                    Password must be at least 6 characters.
                   </small>
                 )}
               </div>
@@ -547,28 +562,13 @@ export default function EmployeesList(
             ))}
             {sortedEmployees.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center" }}>
+                <td colSpan={6} style={{ textAlign: "center" }}>
                   No employees found matching criteria.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="report-actions">
-        <PrintButton
-          title="Employees Report"
-          subtitle={`Generated on ${new Date().toLocaleDateString()}`}
-          filename="zlagoda-employees-report.pdf"
-          storeName="ZLAGODA Supermarket"
-          footerText="Confidential - HR Data"
-          tableOptions={{
-            headers: reportHeaders,
-            getRows: getReportRows,
-            columnWidths: reportColumnWidths,
-          }}
-        />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import PrintButton from "./PrintButton.tsx";
 
 export default function ProductFilter({ products }: { products: Product[] }) {
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [upcLookup, setUpcLookup] = useState("");
+  const [upcLookup, setUpcLookup] = useState(""); 
   const [productDetails, setProductDetails] = useState<Product | null>(null);
   const [promotionalFilter, setPromotionalFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -353,6 +353,21 @@ export default function ProductFilter({ products }: { products: Product[] }) {
         </button>
       </div>
 
+      <div className="report-actions">
+        <PrintButton
+          title="Product Filter Report"
+          subtitle={`Filtered Products - ${new Date().toLocaleDateString()}`}
+          filename="zlagoda-product-filter-report.pdf"
+          storeName="ZLAGODA Supermarket"
+          footerText="Product Data"
+          tableOptions={{
+            headers: reportHeaders,
+            getRows: getReportRows,
+            columnWidths: reportColumnWidths,
+          }}
+        />
+      </div>
+
       <div className="product-table-container">
         <table className="data-table">
           <thead>
@@ -439,21 +454,6 @@ export default function ProductFilter({ products }: { products: Product[] }) {
           No products found. Try changing your filters.
         </div>
       )}
-
-      <div className="report-actions">
-        <PrintButton
-          title="Product Filter Report"
-          subtitle={`Filtered Products - ${new Date().toLocaleDateString()}`}
-          filename="zlagoda-product-filter-report.pdf"
-          storeName="ZLAGODA Supermarket"
-          footerText="Product Data"
-          tableOptions={{
-            headers: reportHeaders,
-            getRows: getReportRows,
-            columnWidths: reportColumnWidths,
-          }}
-        />
-      </div>
     </div>
   );
 }

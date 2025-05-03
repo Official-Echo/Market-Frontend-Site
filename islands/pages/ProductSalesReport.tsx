@@ -310,26 +310,6 @@ export default function ProductSalesReport({
             </tbody>
           </table>
 
-          <div
-            className="report-actions"
-            style={{ marginTop: "10px", marginBottom: "20px" }}
-          >
-            <PrintButton
-              title="Product Sales Summary Report"
-              subtitle={`Product: ${reportData.searchParams.upc} (${
-                formatDate(reportData.searchParams.from)
-              } - ${formatDate(reportData.searchParams.to)})`}
-              filename={`zlagoda-sales-summary-${reportData.searchParams.upc}.pdf`}
-              storeName="ZLAGODA Supermarket"
-              footerText="Sales Summary"
-              tableOptions={{
-                headers: summaryReportHeaders,
-                getRows: getSummaryReportRows,
-                columnWidths: summaryColumnWidths,
-              }}
-            />
-          </div>
-
           {reportData.sales && reportData.sales.length > 0 && (
             <div className="sales-details-container">
               <div className="collapsible-header" onClick={toggleDetails}>

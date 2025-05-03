@@ -162,6 +162,21 @@ export default function CategoriesList(
         </button>
       </div>
 
+      <div className="report-actions">
+        <PrintButton
+          title="Categories Report"
+          subtitle={`Generated on ${new Date().toLocaleDateString()}`}
+          filename="zlagoda-categories-report.pdf"
+          storeName="ZLAGODA Supermarket"
+          footerText="Product Management Data"
+          tableOptions={{
+            headers: reportHeaders,
+            getRows: getReportRows,
+            columnWidths: reportColumnWidths,
+          }}
+        />
+      </div>
+
       {showForm && (
         <div className="form-container">
           <h2>
@@ -265,21 +280,6 @@ export default function CategoriesList(
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="report-actions">
-        <PrintButton
-          title="Categories Report"
-          subtitle={`Generated on ${new Date().toLocaleDateString()}`}
-          filename="zlagoda-categories-report.pdf"
-          storeName="ZLAGODA Supermarket"
-          footerText="Product Management Data"
-          tableOptions={{
-            headers: reportHeaders,
-            getRows: getReportRows,
-            columnWidths: reportColumnWidths,
-          }}
-        />
       </div>
     </div>
   );

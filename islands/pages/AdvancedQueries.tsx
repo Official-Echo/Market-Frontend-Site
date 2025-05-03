@@ -172,9 +172,9 @@ export default function AdvancedQueries(props: Props) {
     },
     {
       id: "unsold_without_discount",
-      name: "Unsold Non-Promotional Items (Before Date)",
+      name: "Unsold Non-Promotional Items (After Date)",
       description:
-        "Lists non-promotional items that were not sold before a specified date.",
+        "Lists non-promotional items that were not sold after a specified date.",
       params: ["from"],
       endpoint: "/api/specific_info/unsold_without_discount",
       mapResult: (data: any[]): QueryResult => ({
@@ -339,7 +339,7 @@ export default function AdvancedQueries(props: Props) {
 
   return (
     <div>
-      <h1>Advanced Queries</h1>
+      <h1>Ad Hoc Queries</h1>
       <p>Select and execute predefined complex database queries.</p>
 
       <div className="form-container" style={{ marginBottom: "20px" }}>
@@ -466,7 +466,7 @@ export default function AdvancedQueries(props: Props) {
 
                 <div className="report-actions" style={{ marginTop: "20px" }}>
                   <PrintButton
-                    title={results.title || "Advanced Query Report"}
+                    title={results.title || "Ad Hoc Query Report"}
                     subtitle={`Executed on ${new Date().toLocaleDateString()}`}
                     filename={`zlagoda-query-${selectedQueryId}.pdf`}
                     storeName="ZLAGODA Supermarket"

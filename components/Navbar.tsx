@@ -107,7 +107,7 @@ export default function Navbar({ role, currentPath, navigate }: Props) {
                 className={currentPath === "/advanced-queries" ? "active" : ""}
                 onClick={() => navigate("/advanced-queries")}
               >
-                Advanced Queries
+                Ad Hoc Queries
               </a>
             )}
           </>

@@ -280,6 +280,21 @@ export default function CustomerCardsList(
         )}
       </div>
 
+	  <div className="report-actions">
+        <PrintButton
+          title="Customer Loyalty Cards Report"
+          subtitle={`Generated on ${new Date().toLocaleDateString()}`}
+          filename="zlagoda-customer-cards-report.pdf"
+          storeName="ZLAGODA Supermarket"
+          footerText="Confidential - Customer Data"
+          tableOptions={{
+            headers: reportHeaders,
+            getRows: getReportRows,
+            columnWidths: reportColumnWidths,
+          }}
+        />
+      </div>
+
       {showForm && (role === Role.MANAGER || role === Role.CASHIER) && (
         <div className="form-container">
           <h2>
@@ -509,21 +524,6 @@ export default function CustomerCardsList(
               )}
           </tbody>
         </table>
-      </div>
-
-      <div className="report-actions">
-        <PrintButton
-          title="Customer Loyalty Cards Report"
-          subtitle={`Generated on ${new Date().toLocaleDateString()}`}
-          filename="zlagoda-customer-cards-report.pdf"
-          storeName="ZLAGODA Supermarket"
-          footerText="Confidential - Customer Data"
-          tableOptions={{
-            headers: reportHeaders,
-            getRows: getReportRows,
-            columnWidths: reportColumnWidths,
-          }}
-        />
       </div>
     </div>
   );
