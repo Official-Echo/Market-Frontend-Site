@@ -3,13 +3,16 @@ import { apiFetch } from "../utils/api.ts";
 import { Product } from "../routes/products.tsx";
 import { jsPDF } from "jspdf";
 import PrintButton from "./PrintButton.tsx";
+import LookupInput from "../components/LookUpInput.tsx";
 
 export default function ProductFilter({ products }: { products: Product[] }) {
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [upcLookup, setUpcLookup] = useState(""); 
-  const [productDetails, setProductDetails] = useState<Product | null>(null);
+
   const [promotionalFilter, setPromotionalFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUpcFilter, setSelectedUpcFilter] = useState<string | null>(
+    null,
+  );
 
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Product | "";
@@ -21,22 +24,40 @@ export default function ProductFilter({ products }: { products: Product[] }) {
 
   const categories = Array.from(new Set(products.map((p) => p.category)));
 
-  const filteredProducts = products.filter((p) => {
-    const categoryMatches = selectedCategory === "" ||
-      p.category === selectedCategory;
+  const upcOptions = useMemo(() => {
+    const uniqueUpcs = Array.from(new Set(products.map((p) => p.upc)));
 
-    const promotionalMatches = promotionalFilter === "" ||
-      (promotionalFilter === "true" && p.isPromotional) ||
-      (promotionalFilter === "false" && !p.isPromotional);
+    return uniqueUpcs.map((upc) => ({ upc: upc }));
+  }, [products]);
 
-    const term = searchTerm.toLowerCase();
-    const searchMatches = !term ||
-      p.productName.toLowerCase().includes(term) ||
-      p.idProduct?.toString().includes(term) ||
-      p.upc?.toLowerCase().includes(term);
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const categoryMatches = selectedCategory === "" ||
+        p.category === selectedCategory;
 
-    return categoryMatches && promotionalMatches && searchMatches;
-  });
+      const promotionalMatches = promotionalFilter === "" ||
+        (promotionalFilter === "true" && p.isPromotional) ||
+        (promotionalFilter === "false" && !p.isPromotional);
+
+      const term = searchTerm.toLowerCase();
+      const searchMatches = !term ||
+        p.productName.toLowerCase().includes(term) ||
+        p.idProduct?.toString().includes(term) ||
+        p.upc?.toLowerCase().includes(term);
+
+      const upcMatches = selectedUpcFilter === null ||
+        p.upc === selectedUpcFilter;
+
+      return categoryMatches && promotionalMatches && searchMatches &&
+        upcMatches;
+    });
+  }, [
+    products,
+    selectedCategory,
+    promotionalFilter,
+    searchTerm,
+    selectedUpcFilter,
+  ]);
 
   const sortedProducts = useMemo(() => {
     const productsCopy = [...filteredProducts];
@@ -45,10 +66,14 @@ export default function ProductFilter({ products }: { products: Product[] }) {
 
     return productsCopy.sort((a, b) => {
       const key = sortConfig.key as keyof Product;
-      if (a[key] < b[key]) {
+
+      const aValue = a[key];
+      const bValue = b[key];
+
+      if (aValue < bValue) {
         return sortConfig.direction === "ascending" ? -1 : 1;
       }
-      if (a[key] > b[key]) {
+      if (aValue > bValue) {
         return sortConfig.direction === "ascending" ? 1 : -1;
       }
       return 0;
@@ -76,8 +101,9 @@ export default function ProductFilter({ products }: { products: Product[] }) {
       newSelection.add(id);
     }
     setSelectedItems(newSelection);
-
-    setSelectAll(newSelection.size === sortedProducts.length);
+    setSelectAll(
+      newSelection.size === sortedProducts.length && sortedProducts.length > 0,
+    );
   };
 
   const toggleSelectAll = () => {
@@ -88,53 +114,6 @@ export default function ProductFilter({ products }: { products: Product[] }) {
       setSelectedItems(new Set(allIds));
     }
     setSelectAll(!selectAll);
-  };
-
-  const handleUpcLookup = async () => {
-    const trimmedUpc = upcLookup.trim();
-    if (!trimmedUpc) return;
-    setProductDetails(null);
-
-    const foundLocally = products.find((p) => p.upc === trimmedUpc);
-
-    if (foundLocally) {
-      setProductDetails(foundLocally);
-      return;
-    }
-
-    try {
-      const productDataFromApi = await apiFetch(
-        `/api/store-products/search/${trimmedUpc}`,
-      );
-
-      if (!productDataFromApi) {
-        throw new Error("Product not found via API for the given UPC.");
-      }
-
-      const partialDetails: Product = {
-        idProduct: "",
-        category: "N/A",
-        categoryNumber: 0,
-
-        productName: productDataFromApi.productName || "N/A",
-        sellingPrice: productDataFromApi.sellingPrice ?? 0,
-        quantity: productDataFromApi.productsNumber ?? 0,
-        isPromotional: productDataFromApi.promotionalProduct ?? false,
-        upc: trimmedUpc,
-        characteristics: productDataFromApi.characteristics || "N/A",
-        manufacturer: productDataFromApi.manufacturer || "N/A",
-      };
-
-      setProductDetails(partialDetails);
-    } catch (err) {
-      console.error("Failed to find product details by UPC:", err);
-      alert(
-        `Product lookup failed: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`,
-      );
-      setProductDetails(null);
-    }
   };
 
   const generateReport = () => {
@@ -152,7 +131,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
 
     doc.text("ID", 10, 28);
     doc.text("Name", 30, 28);
-    doc.text("Category", 100, 28);
+    doc.text("UPC", 100, 28);
     doc.text("Price", 150, 28);
     doc.text("Qty", 175, 28);
 
@@ -162,7 +141,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
       const y = 38 + (index * 10);
       doc.text(p.idProduct.toString(), 10, y);
       doc.text(p.productName, 30, y);
-      doc.text(p.category, 100, y);
+      doc.text(p.upc, 100, y);
       doc.text(`$${p.sellingPrice.toFixed(2)}`, 150, y);
       doc.text(p.quantity.toString(), 175, y);
     });
@@ -194,7 +173,6 @@ export default function ProductFilter({ products }: { products: Product[] }) {
       case "export":
         generateReport();
         break;
-
       default:
         alert(`Action "${action}" not implemented`);
     }
@@ -227,8 +205,14 @@ export default function ProductFilter({ products }: { products: Product[] }) {
     "Promotional",
     "Manufacturer",
   ];
-
   const reportColumnWidths = [10, 20, 15, 10, 10, 10, 10, 15];
+
+  const handleUpcFilterChange = (
+    name: string,
+    selectedValue: string | number | null,
+  ) => {
+    setSelectedUpcFilter(selectedValue ? String(selectedValue) : null);
+  };
 
   return (
     <div className="product-filter">
@@ -261,19 +245,19 @@ export default function ProductFilter({ products }: { products: Product[] }) {
           </select>
         </div>
 
-        <div className="filter-group">
-          <label>Lookup by UPC:</label>
-          <div className="search-group">
-            <input
-              type="text"
-              value={upcLookup}
-              onChange={(e) =>
-                setUpcLookup((e.target as HTMLInputElement).value)}
-              placeholder="Enter UPC code..."
-            />
-            <button type="button" onClick={handleUpcLookup}>Search</button>
-          </div>
-        </div>
+        <LookupInput
+          label="Filter by UPC:"
+          name="upcFilter"
+          value={selectedUpcFilter}
+          onChange={handleUpcFilterChange}
+          options={upcOptions}
+          optionValueKey="upc"
+          optionLabelKey="upc"
+          placeholder="Enter or select UPC"
+          required={false}
+          disabled={false}
+          fetchError={null}
+        />
 
         <div className="filter-group">
           <label>Promotional Status:</label>
@@ -288,57 +272,6 @@ export default function ProductFilter({ products }: { products: Product[] }) {
           </select>
         </div>
       </div>
-
-      {productDetails && (
-        <div className="product-detail-card">
-          <h3>Product Details</h3>
-          <div className="product-detail-grid">
-            <div className="detail-group">
-              <span className="detail-label">Name:</span>
-              <span className="detail-value">{productDetails.productName}</span>
-            </div>
-            <div className="detail-group">
-              <span className="detail-label">Category:</span>
-              <span className="detail-value">{productDetails.category}</span>
-            </div>
-            <div className="detail-group">
-              <span className="detail-label">Price:</span>
-              <span className="detail-value">
-                ${productDetails.sellingPrice.toFixed(2)}
-              </span>
-            </div>
-            <div className="detail-group">
-              <span className="detail-label">Quantity:</span>
-              <span className="detail-value">{productDetails.quantity}</span>
-            </div>
-            <div className="detail-group">
-              <span className="detail-label">Promotional:</span>
-              <span className="detail-value">
-                {productDetails.isPromotional ? "Yes" : "No"}
-              </span>
-            </div>
-            <div className="detail-group">
-              <span className="detail-label">UPC:</span>
-              <span className="detail-value">{productDetails.upc}</span>
-            </div>
-            <div className="detail-group">
-              <span className="detail-label">Manufacturer:</span>
-              <span className="detail-value">
-                {productDetails.manufacturer || "N/A"}
-              </span>
-            </div>
-            <div className="detail-group" style={{ gridColumn: "1 / -1" }}>
-              <span className="detail-label">Characteristics:</span>
-              <span className="detail-value">
-                {productDetails.characteristics || "N/A"}
-              </span>
-            </div>
-          </div>
-          <button type="button" onClick={() => setProductDetails(null)}>
-            Close
-          </button>
-        </div>
-      )}
 
       <div className="bulk-actions">
         <span className="selection-info">
@@ -377,6 +310,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
                   type="checkbox"
                   checked={selectAll}
                   onChange={toggleSelectAll}
+                  disabled={sortedProducts.length === 0}
                 />
               </th>
               <th
@@ -451,7 +385,7 @@ export default function ProductFilter({ products }: { products: Product[] }) {
 
       {sortedProducts.length === 0 && (
         <div className="no-data-message">
-          No products found. Try changing your filters.
+          No products found matching your filters.
         </div>
       )}
     </div>
